@@ -1,0 +1,130 @@
+from flask import request, session
+from flask_restful import Resource, API
+from sqlalchemy.exc import IntegrityError
+from flask import Flask, make_response, jsonify, request
+from flask_migrate import Migrate
+from config import app, db, api
+from model import db, Team, Pokemon , PokeTeam, Trainer
+import os
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DATABASE = os.environ.get(
+    "DB_URI", f"sqlite:///{os.path.join(BASE_DIR, 'app.db')}")
+
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.json.compact = False
+
+migrate = Migrate(app, db)
+
+db.init_app(app)
+
+
+@app.route('/')
+def home():
+    return ''
+
+
+@app.before_request
+def route_filter():
+    bypass_routes = ["signup","login"]
+    if request.endpoint not in bypass_routes and not session.get("user_id"):
+        return {"Error": "Unauthorized"},401
+    
+class Signup(Resource):
+    def post(self):
+        try:
+            data = request.get_json()
+            new_trainer = Trainer(
+                trainer = data["trainer"],
+                
+            )
+            new_trainer.password_hash = data["password"]
+            db.session.add(new_trainer)
+            db.session.commit()
+            session['tainer_id'] = new_trainer.id
+            return new_trainer.to_dict(rules = ('-teams','-password_hash')),201
+        except Exception as e:
+            return {"Error": "Could not make trainer"},422
+        
+class CheckSession(Resource):
+    def get(self):
+        user = Trainer.query.filter(Trainer.id == session["trainer_id"]).first()
+        return user.to_dict(rules = ('-teams','-password_hash')),200
+    
+class Login(Resource):
+    def post(self):
+        data = request.get_json()
+        user = Trainer.query.filter(Trainer.trainer == data["trainer"]).first()
+        if user and user.authenticate(data['password']):
+            session['user_id'] = user.id
+            print(session)
+            return user.to_dict(rules = ('-teams','-password_hash')),200
+        else:
+            return {"Error": "Not valid trainer name or password"}, 401
+        
+
+class Logout(Resource):
+    def delete(self):
+        session['trainer_id'] = None
+        return {},204
+    
+app.route('/teams', methods = ['GET','POST','PATCH','DELETE'])
+def team_route():
+    if request.method == "GET":
+        all_teams = Team.query.all()
+        dict_teams = []
+        for team in all_teams:
+            dict_teams.append(team.to_dict())
+        return make_response(dict_teams,200)
+    elif request.method == "POST":
+        try:
+            data = request.get.json()
+            new_team = Team(
+                name = data['name'])
+            db.session.add(new_team)
+            db.session.commit()
+            return make_response(new_team.to_dict())
+        except:
+            return make_response({"errors": ["validation errors"]},400)
+        
+# app.route()
+#     elif request.method == "PATCH":
+#             try:
+#                 data = request.get_json()
+#                 for attr in data:
+#                     setattr(found_,attr,data[attr])
+#                 db.session.add(found_scientist)
+#                 db.session.commit()
+#                 return make_response(found_scientist.to_dict(rules=('-missions',)),202)
+#             except:
+#                 return make_response({"errors": ["validation errors"]},400)
+
+             
+            
+
+
+
+   # name1 = data['name1']
+                # name2 = data['name2']
+                # name3 = data['name3']
+                # name4 = data['name4']
+                # name5 = data['name5']
+                # name6 = data['name6']
+
+api.add_resource(Signup, '/signup', endpoint='signup')
+api.add_resource(CheckSession, '/check_session', endpoint='check_session')
+api.add_resource(Login, '/login', endpoint='login')
+api.add_resource(Logout, '/logout', endpoint='logout')
+
+if __name__ == '__main__':
+    app.run(port=5555, debug=True)
+        
+
+
+# team- full CRUD
+# pokemon- get
+# poketeam- post delete
+# 

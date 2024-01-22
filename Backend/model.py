@@ -46,6 +46,12 @@ class Team(Base,SerializerMixin):
     __tablename__= "teams"
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String)
+    name1 = db.Column(db.String)
+    name2= db.Column(db.String)
+    name3 = db.Column(db.String)
+    name4 = db.Column(db.String)
+    name5 = db.Column(db.String)
+    name6 = db.Column(db.String)
     poke_teams = db.relationship("PokeTeam", back_populates="team")
     serialize_rules=('-poke_teams.team',)
     trainer_id = db.Column(db.Integer, db.ForeignKey("trainers.id"))
