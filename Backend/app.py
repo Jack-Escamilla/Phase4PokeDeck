@@ -120,6 +120,26 @@ def pokemon_route():
     for pokemon in all_pokemons:
         dict_pokemons.append(pokemon.to_dict())
         return make_response(dict_pokemons,200)
+    
+app.route('/poketeam', methods = ["POST", "DELETE"])
+def poketeam_route():
+    if request.method == "POST":
+        try:
+            data = request.get_json()
+            new_poketeam = PokeTeam(
+                team_id = data['team_id'],
+                pokemon_id =  data['pokemon_id'],
+                
+            )
+            db.session.add(new_poketeam)
+            db.session.commit()
+            return make_response(new_poketeam.to_dict(),201)
+        except:
+            return make_response({"errors": ["validation errors"]},400)
+    elif request.method == "DELETE":
+            db.session.delete(new_poketeam)
+            db.session.commit()
+            return make_response({},204)
 
 
 
