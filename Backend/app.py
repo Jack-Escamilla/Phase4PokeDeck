@@ -71,7 +71,7 @@ class Logout(Resource):
         session['trainer_id'] = None
         return {},204
     
-app.route('/teams', methods = ['GET','POST','PATCH','DELETE'])
+app.route('/teams', methods = ['GET','POST'])
 def team_route():
     if request.method == "GET":
         all_teams = Team.query.all()
@@ -90,20 +90,37 @@ def team_route():
         except:
             return make_response({"errors": ["validation errors"]},400)
         
-# app.route()
-#     elif request.method == "PATCH":
-#             try:
-#                 data = request.get_json()
-#                 for attr in data:
-#                     setattr(found_,attr,data[attr])
-#                 db.session.add(found_scientist)
-#                 db.session.commit()
-#                 return make_response(found_scientist.to_dict(rules=('-missions',)),202)
-#             except:
-#                 return make_response({"errors": ["validation errors"]},400)
+app.route('/teams/<int:id>', methods = ['GET', 'PATCH','DELETE'])
+def one_team_route(id):
+    found_team = Team.query.filter(Team.id==id).first()
+    if found_team:
+        if request.method == "GET":
+            return make_response(found_team.to_dict(),200)
+        elif request.method == "PATCH":
+            try:
+                data = request.get_json()
+                for attr in data:
+                    setattr(found_team,attr,data[attr])
+                db.session.add(found_team)
+                db.session.commit()
+                return make_response(found_team.to_dict(),202)
+            except:
+                return make_response({"errors": ["validation errors"]},400)
+        elif request.method == "DELETE":
+            db.session.delete(found_team)
+            db.session.commit()
+            return make_response({},204)
+    else:
+        return make_response({"error": "Team not found"},404)
+        
+app.route('/pokemon')
+def pokemon_route():
+    all_pokemons = Pokemon.query.all()
+    dict_pokemons = []
+    for pokemon in all_pokemons:
+        dict_pokemons.append(pokemon.to_dict())
+        return make_response(dict_pokemons,200)
 
-             
-            
 
 
 
