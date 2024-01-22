@@ -1,5 +1,5 @@
 from flask import request, session
-from flask_restful import Resource, API
+#from flask_restful import Resource, 
 from sqlalchemy.exc import IntegrityError
 from flask import Flask, make_response, jsonify, request
 from flask_migrate import Migrate
@@ -33,8 +33,9 @@ def route_filter():
     if request.endpoint not in bypass_routes and not session.get("user_id"):
         return {"Error": "Unauthorized"},401
     
-class Signup(Resource):
-    def post(self):
+@app.route('/signup',methods=['POST'])
+def signup():
+    if request.method == 'POST':
         try:
             data = request.get_json()
             new_trainer = Trainer(
@@ -49,13 +50,15 @@ class Signup(Resource):
         except Exception as e:
             return {"Error": "Could not make trainer"},422
         
-class CheckSession(Resource):
-    def get(self):
+@app.route('/checksession',methods=['GET'])
+def check_session():
+    if request.method == 'GET':
         user = Trainer.query.filter(Trainer.id == session["trainer_id"]).first()
         return user.to_dict(rules = ('-teams','-password_hash')),200
     
-class Login(Resource):
-    def post(self):
+@app.route('/login', methods=['POST'])
+def login():
+    if request.method == 'POST':
         data = request.get_json()
         user = Trainer.query.filter(Trainer.trainer == data["trainer"]).first()
         if user and user.authenticate(data['password']):
@@ -66,12 +69,13 @@ class Login(Resource):
             return {"Error": "Not valid trainer name or password"}, 401
         
 
-class Logout(Resource):
-    def delete(self):
+@app.route('/lougout', methods=['DELETE'])
+def logout():
+    if request.method == 'DELETE':
         session['trainer_id'] = None
         return {},204
     
-app.route('/teams', methods = ['GET','POST'])
+@app.route('/teams', methods = ['GET','POST'])
 def team_route():
     if request.method == "GET":
         all_teams = Team.query.all()
@@ -90,7 +94,7 @@ def team_route():
         except:
             return make_response({"errors": ["validation errors"]},400)
         
-app.route('/teams/<int:id>', methods = ['GET', 'PATCH','DELETE'])
+@app.route('/teams/<int:id>', methods = ['GET', 'PATCH','DELETE'])
 def one_team_route(id):
     found_team = Team.query.filter(Team.id==id).first()
     if found_team:
@@ -113,35 +117,32 @@ def one_team_route(id):
     else:
         return make_response({"error": "Team not found"},404)
         
-app.route('/pokemon')
+@app.route('/pokemon')
 def pokemon_route():
     all_pokemons = Pokemon.query.all()
     dict_pokemons = []
     for pokemon in all_pokemons:
         dict_pokemons.append(pokemon.to_dict())
         return make_response(dict_pokemons,200)
-    
-app.route('/poketeam', methods = ["POST", "DELETE"])
+
+@app.route('/poketeam', methods=['POST','DELETE'])
 def poketeam_route():
     if request.method == "POST":
         try:
             data = request.get_json()
             new_poketeam = PokeTeam(
                 team_id = data['team_id'],
-                pokemon_id =  data['pokemon_id'],
-                
+                pokemon_id = data['pokemon_id'],
             )
             db.session.add(new_poketeam)
             db.session.commit()
-            return make_response(new_poketeam.to_dict(),201)
-        except:
-            return make_response({"errors": ["validation errors"]},400)
-    elif request.method == "DELETE":
-            db.session.delete(new_poketeam)
-            db.session.commit()
             return make_response({},204)
-
-
+        except:
+            return make_response(new_poketeam.to_dict(),201)
+    elif request.method == "DELETE":
+        db.session.delete(new_poketeam)
+        db.session.commit()
+        return make_response({},204)
 
 
    # name1 = data['name1']
@@ -151,10 +152,12 @@ def poketeam_route():
                 # name5 = data['name5']
                 # name6 = data['name6']
 
+"""
 api.add_resource(Signup, '/signup', endpoint='signup')
 api.add_resource(CheckSession, '/check_session', endpoint='check_session')
 api.add_resource(Login, '/login', endpoint='login')
 api.add_resource(Logout, '/logout', endpoint='logout')
+"""
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
