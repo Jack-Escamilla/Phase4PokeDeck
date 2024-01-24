@@ -19,36 +19,16 @@ function App() {
     });
   }, []);
 
-  // if (!user) return <Login onLogin={setUser} />;
-
-//   return (
-//     <>
-//      <Logo>PokeDecks</Logo>
-//       <NavBar user={user} setUser={setUser} />
-//       <main>
-//         <Switch>
-//           <Route path="/new">
-//             <CreateTeam user={user} />
-//           </Route>
-//           <Route path="/">
-//             <MainPage />
-//           </Route>
-//         </Switch>
-//       </main>
-//     </>
-//   );
-// }
 return (
   <>
   <div>
-   
 
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<Login onLogin={setUser}/>}/>
       <Route path="/main-page" element={<MainPage/>}/>
       <Route path="/create-team" element={<CreateTeam/>}/>
-      <Route path="/edit-team" element={<EditTeam/>}/>
+      {/* <Route path="/save-team" element={<SaveTeam/>}/> */}
     </Routes>
   </BrowserRouter>
   </div>

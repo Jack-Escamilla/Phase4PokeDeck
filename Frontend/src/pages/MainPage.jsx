@@ -48,4 +48,5 @@ function TeamList() {
     </div>
   );
 }
+// still needs a logout button
 export default TeamList;
