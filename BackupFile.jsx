@@ -50,16 +50,18 @@ function CreateTeams() {
       setSelectedPokemon(null);
     }
   };
-
+  
   const handleRemoveFromTeam = (pokemonId) => {
     setTeam(prevTeam => prevTeam.filter(p => p.id !== pokemonId));
   };
-
+  
   const handleSubmitTeam = (e) => {
     e.preventDefault();
+    // You may want to add validation before submitting
     if (newTeamName && team.length > 0 && team.length <= 6) {
       const data = {
         team_name: newTeamName,
+        // Assuming you want to send an array of selected Pokemon names
         pokemon_names: team.map(pokemon => pokemon.name),
       };
       
@@ -87,9 +89,10 @@ function CreateTeams() {
     <div>
       <h1>Create Teams Page</h1>
       <ul>
-        {pokemonList.map(pokemon => (
-          <li key={pokemon.id} onClick={() => handlePokemonClick(pokemon)}>
-            {pokemon.name}
+        {pokemonSprites.map((pokemon) => (
+          <li key={pokemon.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+            <img className="card-image" src={pokemon.image} alt={pokemon.name} style={{ marginRight: '10px' }} />
+            <div onClick={() => handlePokemonClick(pokemon)}>{pokemon.name}</div>
           </li>
         ))}
       </ul>
