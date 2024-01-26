@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 
 function CreateTeams() {
   const [pokemonList, setPokemonList] = useState([]);
-  const [selectedPokemon, setSelectedPokemon] = useState(null);
   const [team, setTeam] = useState([]);
   const [newTeamName, setNewTeamName] = useState('');
   const navigate = useNavigate();
   const [pokemonSprites, setPokemonSprites] = useState([]);
-  
+  const [hoveredPokemon, setHoveredPokemon] = useState(null);
+  const [pokemonDetails, setPokemonDetails] = useState(null);
+
   useEffect(() => {
     const fetchPokemon = async () => {
       const promises = [];
@@ -25,29 +26,40 @@ function CreateTeams() {
         setPokemonSprites(pokemon);
       });
     };
-    
+
     fetchPokemon();
   }, []);
 
   useEffect(() => {
     fetch("/api/pokemon")
-    .then(r => r.json())
-    .then(response => {
-      setPokemonList(response);
-    })
-    .catch(error => {
-      console.error('Error fetching Pokémon:', error);
-    });
+      .then(r => r.json())
+      .then(response => {
+        setPokemonList(response);
+      })
+      .catch(error => {
+        console.error('Error fetching Pokémon:', error);
+      });
   }, []);
-  
-  const handlePokemonClick = (pokemon) => {
-    setSelectedPokemon(pokemon);
-  };
 
-  const handleAddToTeam = () => {
-    if (selectedPokemon && team.length < 6 && !team.some(p => p.id === selectedPokemon.id)) {
-      setTeam(prevTeam => [...prevTeam, selectedPokemon]);
-      setSelectedPokemon(null);
+  useEffect(() => {
+    const fetchPokemonDetails = async () => {
+      if (hoveredPokemon) {
+        const url = `https://pokeapi.co/api/v2/pokemon/${hoveredPokemon.id}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        setPokemonDetails({
+          typing: data.types.map(type => type.type.name).join(', '),
+          stats: data.stats.map(stat => `${stat.stat.name}: ${stat.base_stat}`).join(', ')
+        });
+      }
+    };
+
+    fetchPokemonDetails();
+  }, [hoveredPokemon]);
+
+  const handlePokemonClick = (pokemon) => {
+    if (team.length < 6 && !team.some(p => p.id === pokemon.id)) {
+      setTeam(prevTeam => [...prevTeam, pokemon]);
     }
   };
 
@@ -62,7 +74,7 @@ function CreateTeams() {
         team_name: newTeamName,
         pokemon_names: team.map(pokemon => pokemon.name),
       };
-      
+
       fetch("/api/save-team", {
         method: "POST",
         headers: {
@@ -70,57 +82,94 @@ function CreateTeams() {
         },
         body: JSON.stringify(data),
       })
-      .then(response => {
-        if (response.ok) {
-          setNewTeamName('');
-          setTeam([]);
-          navigate("/main-page");
-        } else {
-          throw new Error('Team creation failed');
-        }
-      })
-      .catch(error => console.error('Error submitting team:', error));
+        .then(response => {
+          if (response.ok) {
+            setNewTeamName('');
+            setTeam([]);
+            navigate("/main-page");
+          } else {
+            throw new Error('Team creation failed');
+          }
+        })
+        .catch(error => console.error('Error submitting team:', error));
     }
   };
-  
+
+  const handleMouseOver = (pokemon) => {
+    setHoveredPokemon(pokemon);
+  };
+
+  const handleMouseOut = () => {
+    setHoveredPokemon(null);
+  };
+
   return (
     <div>
-      <h1>Create Teams Page</h1>
-      <ul>
-        {pokemonList.map(pokemon => (
-          <li key={pokemon.id} onClick={() => handlePokemonClick(pokemon)}>
-            {pokemon.name}
-          </li>
-        ))}
-      </ul>
+      <h1 style={{ textAlign: 'center' }}>Create Teams Page</h1>
       <div>
-        <h2>Selected Pokémon: {selectedPokemon ? selectedPokemon.name : 'None'}</h2>
-        <button onClick={handleAddToTeam} disabled={!selectedPokemon || team.length === 6}>
-          Add to Team
-        </button>
+        <label>
+          New Team Name:
+          <input type="text" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} />
+        </label>
       </div>
-      <div>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ width: '300px', marginRight: '20px', marginTop: hoveredPokemon ? '0' : '-300px' }}>
+          {hoveredPokemon && (
+            <div>
+              <h2>{hoveredPokemon.name}</h2>
+              <img src={hoveredPokemon.image} alt={hoveredPokemon.name} />
+              {pokemonDetails && (
+                <div>
+                  <p><strong>Typing:</strong> {pokemonDetails.typing}</p>
+                  <p><strong>Stats:</strong> {pokemonDetails.stats}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+          {pokemonSprites.map((pokemon) => (
+            <div
+              key={pokemon.id}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                cursor: 'pointer',
+                transform: hoveredPokemon === pokemon ? 'scale(1.2)' : 'scale(1)',
+                transition: 'transform 0.3s ease',
+              }}
+              onClick={() => handlePokemonClick(pokemon)}
+              onMouseOver={() => handleMouseOver(pokemon)}
+              onMouseOut={handleMouseOut}
+            >
+              <img className="card-image" src={pokemon.image} alt={pokemon.name} style={{ marginBottom: '5px' }} />
+              <div style={{ color: hoveredPokemon === pokemon ? 'pink' : 'white' }}>{pokemon.name}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ position: 'relative', left: '50px', top: '-300px'}}>
         <h2>Selected Team:</h2>
         <ul>
           {team.map(pokemon => (
             <li key={pokemon.id}>
+              <img src={pokemon.image} alt={pokemon.name} style={{ marginRight: '5px', marginBottom: '-5px', width: '30px', height: '30px' }} />
               {pokemon.name}
-              <button onClick={() => handleRemoveFromTeam(pokemon.id)}>🗑️</button>
+              <span style={{ marginLeft: '5px', cursor: 'pointer' }} onClick={() => handleRemoveFromTeam(pokemon.id)}>🗑️</span>
             </li>
           ))}
         </ul>
       </div>
       <div>
-        <form onSubmit={handleSubmitTeam}>
-          <label>
-            New Team Name:
-            <input type="text" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} />
-          </label>
-          <button type="submit">Save Team</button>
-        </form>
-      </div>
-      <div>
-        <button onClick={() => navigate("/main-page")}>Home</button>
+        <div >
+          <form onSubmit={handleSubmitTeam} style={{ textAlign: 'center' }}>
+            <button type="submit">Save Team</button>
+          </form>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <button onClick={() => navigate("/main-page")}>Home</button>
+        </div>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@picocss/pico": "^1.5.11",
     "axios": "^1.6.5",
     "create-react-app": "^5.0.1",
     "react": "^18.2.0",
