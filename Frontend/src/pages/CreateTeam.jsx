@@ -149,7 +149,7 @@ function CreateTeams() {
           ))}
         </div>
       </div>
-      <div style={{ position: 'relative', left: '-200px', top: '-300px', width: '250px'}}>
+      <div style={{ position: 'relative', left: '-450px', top: '-100px', width: '250px'}}>
         <h2>Selected Team:</h2>
         <ul>
           {team.map(pokemon => (
